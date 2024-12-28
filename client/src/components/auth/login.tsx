@@ -98,7 +98,7 @@ const Login: React.FC = () => {
                         ]
                     }
                 >
-                    <Input prefix={<LockOutlined />} type="password" placeholder="Password" />
+                    <Input.Password prefix={<LockOutlined />} type="password" placeholder="Password" />
                 </Form.Item>
                 <Form.Item>
                     <Flex justify="space-between" align="center">

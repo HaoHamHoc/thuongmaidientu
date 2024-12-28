@@ -17,6 +17,22 @@ const Register: React.FC<IBackendRes<IDataRes>> = () => {
         return String(val).charAt(0).toUpperCase() + String(val).slice(1);
     }
 
+    function isValidPassword(password: string) {
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        return regex.test(password) && (password.split(" ").length ===1);
+    }
+
+    const isValidEmail = (email: string) => {
+        return email?.toLowerCase().match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
+    function checkSpaceInputRegister(input: string){
+        const wordArrayFromSplitString = input.split(" ");
+        return wordArrayFromSplitString.every(item=>(item !== " " && item != ""));
+    }
+
     const onFinish = async(input: IRegisterInput) => {
     if(input.password !== input.confirmpassword){
          notification.error({
@@ -84,14 +100,34 @@ const Register: React.FC<IBackendRes<IDataRes>> = () => {
                  >
                      <Form.Item
                         name="firstname"
-                        rules={[{ required: true, message: 'Please input your Firstname!' },]}
+                        rules={[
+                            { required: true, message: 'Please input your Firstname!'},
+                            ({getFieldValue}) => ({
+                                validator(_, value) {
+                                    if (!checkSpaceInputRegister(getFieldValue("firstname"))) {
+                                        return Promise.reject('Invalid information, please remove extra spaces!');
+                                    }
+                                    return Promise.resolve();
+                                },
+                            })
+                        ]}
                         style={{ display: 'inline-block', width: 'calc(35%)' }}
                     >
                         <Input placeholder="Firstname" />
                     </Form.Item>
                         <Form.Item
                         name="surname"
-                        rules={[{ required: true, message: 'Please input your Surname!' }]}
+                        rules={[
+                            { required: true, message: 'Please input your Surname!'},
+                            ({getFieldValue}) => ({
+                                validator(_, value) {
+                                    if (!checkSpaceInputRegister(getFieldValue("surname"))) {
+                                        return Promise.reject('Invalid information, please remove extra spaces!');
+                                    }
+                                    return Promise.resolve();
+                                },
+                            })
+                        ]}
                         style={{ display: 'inline-block', width: 'calc(60%)' }}
                     >
                         <Input placeholder="Surname" />
@@ -100,8 +136,15 @@ const Register: React.FC<IBackendRes<IDataRes>> = () => {
                 <Form.Item
                     name="email"
                     rules={[
-                        { required: true, message: 'Please input your Username!' },
-                        { min: 8, message: 'Password must be longer than or equal to 8 characters'}
+                        { required: true, message: 'Please input your Email!' },
+                        ({getFieldValue}) => ({
+                            validator(_, value) {
+                                if (!isValidEmail(getFieldValue('email'))) {
+                                    return Promise.reject('Invalid email address');
+                                }
+                                return Promise.resolve();
+                            },
+                        })
                     ]}
                 >
                     <Input placeholder="Email" />
@@ -110,26 +153,33 @@ const Register: React.FC<IBackendRes<IDataRes>> = () => {
                     name="password"
                     rules={[
                         { required: true, message: 'Please input your Password!' },
-                        { min: 8, message: 'Password must be longer than or equal to 8 characters'}
+                        ({getFieldValue}) => ({
+                            validator(_, value) {
+                                if (!isValidPassword(getFieldValue('password'))) {
+                                    return Promise.reject('Password must contain at least 8 characters and include lowercase letters, uppercase letters, numbers, special characters and no spaces');
+                                }
+                                return Promise.resolve();
+                            },
+                        })
                     ]}
                 >
-                    <Input type="password" placeholder="Password" />
+                    <Input.Password type="password" placeholder="Password" />
                 </Form.Item>
                 <Form.Item
                     name="confirmpassword"
                     rules={[
                         { required: true, message: 'Please input your Re-Password!' },
                         ({getFieldValue}) => ({
-                        validator(_, value) {
-                            if (getFieldValue('confirmpassword') !== getFieldValue('password')) {
-                                return Promise.reject('Password and Confirm password do not match!');
-                            }
-                            return Promise.resolve();
-                        },
+                            validator(_, value) {
+                                if (getFieldValue('confirmpassword') !== getFieldValue('password')) {
+                                    return Promise.reject('Password and Confirm password do not match!');
+                                }
+                                return Promise.resolve();
+                            },
                         })
                     ]}
                 >
-                    <Input type="password" placeholder="Confirm password" />
+                    <Input.Password type="password" placeholder="Confirm password" />
                 </Form.Item>
                 <Form.Item>
                     <Link href={"/"} 
