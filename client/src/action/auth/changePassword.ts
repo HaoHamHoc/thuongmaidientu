@@ -8,7 +8,7 @@ export const handleSendEmailToGetCode = async(email: string) => {
         body: {
             email
         },
-        method: "POST"
+        method: "PUT"
     })
     return r;
 };

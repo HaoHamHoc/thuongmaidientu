@@ -1,9 +1,10 @@
 import { handleSendEmailToGetCode } from "@/action/auth/changePassword";
+import { isValidEmail } from "@/check/auth/register";
 import { CurrentChangePasswordContext } from "@/context/auth/currentChangePasswordSteps";
 import { EmailUserChangePasswordContext } from "@/context/auth/emailUserChangePassword.context";
-import { Button, Form, Input, message, notification } from "antd";
-import { useContext } from "react";
-
+import { Button, Form, Input, notification } from "antd";
+import { useContext, useState } from "react";
+import { SendOutlined } from '@ant-design/icons';
 
 const GetEmailUser: React.FC = () => {
     const { setEmail } = useContext(EmailUserChangePasswordContext);
@@ -27,7 +28,7 @@ const GetEmailUser: React.FC = () => {
                 duration: 3
             });
         }
-  };
+    };
 
     return (
         <>
@@ -46,14 +47,26 @@ const GetEmailUser: React.FC = () => {
                 </Form.Item>
                 <Form.Item
                     name="email"
+                    rules={[
+                        { required: true, message: 'Please input your Email!' },
+                        ({getFieldValue}) => ({
+                            validator(_, value) {
+                                if (!isValidEmail(getFieldValue('email'))) {
+                                    return Promise.reject('Invalid email address');
+                                }
+                                return Promise.resolve();
+                            },
+                        })
+                    ]}
                 >
                      <Input placeholder="Input your email" />
                 </Form.Item>
                 <Form.Item>
-                     <Button 
+                    <Button 
                         type="primary"
                         htmlType="submit"
                     >
+                        <SendOutlined />
                         Send
                     </Button>
                 </Form.Item>

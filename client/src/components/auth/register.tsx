@@ -7,6 +7,7 @@ import Link from 'next/link';
 import handleRegister from '@/action/auth/register';
 import { EmailUserVerifyContext } from '@/context/auth/emailUserVerify.context';
 import { useRouter } from 'next/navigation';
+import checkSpaceInputRegister, { isValidEmail, isValidPassword } from '@/check/auth/register';
 
 const Register: React.FC<IBackendRes<IDataRes>> = () => {
     const router = useRouter();
@@ -15,22 +16,6 @@ const Register: React.FC<IBackendRes<IDataRes>> = () => {
 
     function capitalizeFirstLetter(val: string) {
         return String(val).charAt(0).toUpperCase() + String(val).slice(1);
-    }
-
-    function isValidPassword(password: string) {
-        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-        return regex.test(password) && (password.split(" ").length ===1);
-    }
-
-    const isValidEmail = (email: string) => {
-        return email?.toLowerCase().match(
-                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-            );
-    };
-
-    function checkSpaceInputRegister(input: string){
-        const wordArrayFromSplitString = input.split(" ");
-        return wordArrayFromSplitString.every(item=>(item !== " " && item != ""));
     }
 
     const onFinish = async(input: IRegisterInput) => {

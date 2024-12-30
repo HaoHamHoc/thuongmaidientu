@@ -16,6 +16,7 @@ declare global {
         error?: string | string[];
         message: string;
         statusCode: number | string;
+        code: number;
         data?: T;
     }
 

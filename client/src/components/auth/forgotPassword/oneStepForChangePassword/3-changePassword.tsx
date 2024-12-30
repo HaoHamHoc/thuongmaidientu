@@ -1,12 +1,16 @@
 import handleChangePassword from "@/action/auth/changePassword";
+import { isValidPassword } from "@/check/auth/register";
 import { CurrentChangePasswordContext } from "@/context/auth/currentChangePasswordSteps";
 import { EmailUserChangePasswordContext } from "@/context/auth/emailUserChangePassword.context";
-import { Button, Form, Input, notification } from "antd";
+import { Button, Flex, Form, Input, notification } from "antd";
 import { useContext } from "react";
+import { SendOutlined, RollbackOutlined } from '@ant-design/icons';
 
 const ChangePassword: React.FC = () => {
     const { email } = useContext(EmailUserChangePasswordContext);
     const { setCurrent } = useContext(CurrentChangePasswordContext);
+
+    const returnToStep1 = () => setCurrent(0);
 
     const onFinish = async(values: {password: string}) => {
         const res: IBackendRes<null>= await handleChangePassword(email, values.password);
@@ -47,7 +51,14 @@ const ChangePassword: React.FC = () => {
                      rules={
                         [
                             { required: true, message: 'Please input your Password!' },
-                            { min: 8, message: 'Password must be longer than or equal to 8 characters'}
+                            ({getFieldValue}) => ({
+                                validator(_, value) {
+                                    if (!isValidPassword(getFieldValue('password'))) {
+                                        return Promise.reject('Password must contain at least 8 characters and include lowercase letters, uppercase letters, numbers, special characters and no spaces');
+                                    }
+                                    return Promise.resolve();
+                                },
+                            })
                         ]
                     }
                 >
@@ -69,9 +80,14 @@ const ChangePassword: React.FC = () => {
                 >
                      <Input type="password" placeholder="Input your confirm new password" />
                 </Form.Item>
-                <Form.Item>
-                     <Button type="primary" htmlType="submit">Send</Button>
-                </Form.Item>
+                <Flex justify="space-between">
+                    <Form.Item noStyle>
+                        <Button type="primary" htmlType="submit"><SendOutlined />Send</Button>
+                    </Form.Item>
+                    <Form.Item noStyle>
+                        <Button type="primary" danger onClick={returnToStep1}><RollbackOutlined style={{fontSize: "20px"}} />Return to step 1</Button>
+                    </Form.Item>
+                </Flex>
                 
             </Form>
         </>

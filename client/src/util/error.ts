@@ -9,8 +9,18 @@ export class CustomAuthError extends AuthError{
     }
 }
 
-export class InvalidEmailPasswordError extends AuthError{
-    static type = "Email or password is incorrect";
+export class InvalidEmailError extends AuthError{
+    static type = "Email is incorrect";
+}
+
+
+export class InvalidPasswordError extends AuthError{
+    static type: string;
+
+    constructor(message?: any) { 
+        super();
+        this.type = message;
+    }
 }
 
 export class InactiveAccountError extends AuthError{

@@ -36,7 +36,7 @@ export class AuthController {
     return await this.authService.activeAccount(email, code);
   }
 
-  @Post("getCodeChangePassword")
+  @Put("getCodeChangePassword")
   async getCodeChangePassword(
     @Body("email") email: string
   ){

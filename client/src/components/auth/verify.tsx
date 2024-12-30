@@ -1,8 +1,8 @@
 "use client"
 
-import { Button, Checkbox, Col, Divider, Flex, Form, Input, notification, Row } from 'antd';
-import { ArrowRightOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
-import React, { useContext, useState } from 'react';
+import { Button, Col, Divider, Form, Input, notification, Row } from 'antd';
+import { ArrowRightOutlined } from '@ant-design/icons';
+import React, { useContext, useEffect, useState } from 'react';
 import { EmailUserVerifyContext } from '@/context/auth/emailUserVerify.context';
 import { handleRefreshCodeVerify } from '@/action/auth/verify';
 import { blue } from '@ant-design/colors'

@@ -11,12 +11,16 @@ import MyModal from '../all/modal';
 import ForgotPassword from './forgotPassword';
 import CloseModalContextProvider from '@/context/auth/closeModalDoneChangePassword.context';
 import { EmailUserVerifyContext } from '@/context/auth/emailUserVerify.context';
+import CurrentChangePasswordContextProvider from "@/context/auth/currentChangePasswordSteps";
+import { handleRefreshCodeVerify } from '@/action/auth/verify';
 
 const Login: React.FC = () => {
     const [isHoverRefresh, setIsHoverRefresh] = useState<boolean>(false);
     const onMouseOver = () => setIsHoverRefresh(true);
     const onMouseOut = () => setIsHoverRefresh(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [current, setCurrent] = useState<number>(0);
 
     const { setEmail } = useContext(EmailUserVerifyContext);
 
@@ -40,7 +44,6 @@ const Login: React.FC = () => {
         message.success({
             content: "Login success",
             duration: 3
-
         });
         router.push("/");
     }else{
@@ -52,6 +55,20 @@ const Login: React.FC = () => {
 
         if(res?.code === 3){
             setEmail(values.email);
+            let res: IBackendRes<null> = await handleRefreshCodeVerify(values.email);
+            if(+res?.statusCode === 200){
+                notification.success({
+                    message: "Success",
+                    description: res?.message,
+                    duration: 3
+                });
+            }else{
+                notification.error({
+                    message: "Error",
+                    description: res?.message,
+                    duration: 3
+                });
+            }
             router.push("/auth/verify")
         }
     }
@@ -147,7 +164,9 @@ const Login: React.FC = () => {
             handleCancel={handleCancel}
         >
             <CloseModalContextProvider closeModal={handleCancel}>
-                <ForgotPassword/>
+                <CurrentChangePasswordContextProvider current={current} setCurrent={setCurrent}>
+                    <ForgotPassword/>
+                </CurrentChangePasswordContextProvider>
             </CloseModalContextProvider>
         </MyModal>
     </>

@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { sendRequest } from "./util/api";
-import { AccountIsNotActive, InvalidEmailPasswordError, ServerError } from "./util/error";
+import { AccountIsNotActive, InvalidEmailError, InvalidPasswordError, ServerError } from "./util/error";
 import { IUser } from "./types/next-auth";
  
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -29,7 +29,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             access_token: user?.data?.AT
           };
         }else if(+user?.statusCode === 401){
-          throw new InvalidEmailPasswordError();
+          if(user?.code === 0){
+            throw new InvalidEmailError();
+          }else{
+            throw new InvalidPasswordError(user?.message);
+          }
         }else if(+user?.statusCode === 400){
           throw new AccountIsNotActive();
         }else{

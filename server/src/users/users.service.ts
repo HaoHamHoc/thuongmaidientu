@@ -28,13 +28,27 @@ export class UsersService {
       }
      });
 
-      if(user){
+      if(!user.timePassword){
+        return {
+          statusCode: 401,
+          code: 1,
+          message: "Your account has been locked"
+        }
+      }else if(user){
         const isTruePassword = await argon.verify(user?.hasspassword, password);
 
         if(!isTruePassword){
+          const newUser = await this.userRepository.update(user.id,{
+            timePassword: +user.timePassword - 1
+          });
+
           return {
             statusCode: 401,
-            message: "Email or password incorrect"
+            code: 1,
+            message: user.timePassword - 1 ?
+            `Password is incorrect, you have ${user.timePassword - 1} more attempts to re-enter your password.`
+            :
+            "The number of attempts to enter the password has expired"
           }
         };
 
@@ -45,10 +59,14 @@ export class UsersService {
           };
         }
 
-         const token = await this.createToken({
-            id: user.id,
-            email: user.email
-          });
+        const token = await this.createToken({
+          id: user.id,
+          email: user.email
+        });
+
+        const newUser = await this.userRepository.update(user.id,{
+          timePassword: 5
+        });
       
       return {
         statusCode: 200,
@@ -65,7 +83,8 @@ export class UsersService {
       }else{
          return {
             statusCode: 401,
-            message: "Email or password incorrect"
+            code: 0,
+            message: "Email is not exists"
           }
       }
   };
@@ -225,9 +244,9 @@ export class UsersService {
       }
     };
 
-    if( user.codeChangePassword === code){
+    if(user.codeChangePassword === code){
       await this.userRepository.update(user.id, {
-        expiredCodeChangePassword: dayjs().add(5, "minutes").toISOString()
+        expiredChangePassword: dayjs().add(5, "minutes").toISOString()
       })
 
       return {
@@ -252,7 +271,12 @@ export class UsersService {
         statusCode: 400,
         message: "User is not exist"
       }
-    };
+    }else if(!dayjs().isBefore(dayjs(user.expiredChangePassword))){
+      return {
+        statusCode: 400,
+        message: "Password change time has expired"
+      }
+    }
 
     const hassPassword = await argon.hash(password);
 

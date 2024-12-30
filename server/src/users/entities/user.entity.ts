@@ -36,4 +36,10 @@ export class User {
 
   @Column({ default: null })
   expiredCodeChangePassword: Date;
+
+  @Column({ default: null })
+  expiredChangePassword: Date;
+
+  @Column({ default: 5 })
+  timePassword: number;
 }
