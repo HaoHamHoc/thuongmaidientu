@@ -1,8 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { IPayload } from './models/payload-token.models';
 import { IDataUser, IResponse } from './models/response.models';
@@ -10,36 +7,44 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon from "argon2";
 import { MailService } from 'src/mail/mail.service';
 import * as dayjs from "dayjs";
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class UsersService {
+export class UsersService extends PrismaClient{
   constructor(
-      @Inject('USER_REPOSITORY')
-      private userRepository: Repository<User>,
       private configService: ConfigService,
       private jwtService: JwtService,
       private mailService: MailService
-  ){}
+  ){
+    super()
+  }
 
    async handleUserLogin(email: string, password: string): Promise<IResponse<IDataUser>>{
-     const user = await this.userRepository.findOne({
-      where: {
-        email: email
-      }
-     });
-
-      if(!user.timePassword){
-        return {
-          statusCode: 401,
-          code: 1,
-          message: "Your account has been locked"
+     const user = await this.users.findFirst({
+        where: {
+          email: email
         }
-      }else if(user){
+     })
+
+      if(user){
+        if(!user.timePassword){
+          return {
+            statusCode: 401,
+            code: 1,
+            message: "Your account has been locked"
+          }
+        }
+
         const isTruePassword = await argon.verify(user?.hasspassword, password);
 
         if(!isTruePassword){
-          const newUser = await this.userRepository.update(user.id,{
-            timePassword: +user.timePassword - 1
+          await this.users.update({
+            where: {
+              email
+            },
+            data: {
+              timePassword: user.timePassword-1
+            }
           });
 
           return {
@@ -64,9 +69,14 @@ export class UsersService {
           email: user.email
         });
 
-        const newUser = await this.userRepository.update(user.id,{
-          timePassword: 5
-        });
+        await this.users.update({
+            where: {
+              email
+            },
+            data: {
+              timePassword: 5
+            }
+          });
       
       return {
         statusCode: 200,
@@ -96,7 +106,7 @@ export class UsersService {
   }
 
   async handleUserRegister(User: CreateUserDto): Promise<IResponse<IDataUser>>{
-    const isExistUser = await this.userRepository.findOne({
+    const isExistUser = await this.users.findFirst({
       where: {
         email: User.email
       }
@@ -109,11 +119,13 @@ export class UsersService {
 
     const hassPassword = await argon.hash(User.password);
 
-    const newUser = await this.userRepository.save({
-      firstname: User.firstname,
-      surname: User.surname,
-      email: User.email,
-      hasspassword: hassPassword
+    const newUser = await this.users.create({
+        data: {
+          firstname: User.firstname,
+          surname: User.surname,
+          email: User.email,
+          hasspassword: hassPassword
+        }
     });
 
     if(newUser) {
@@ -133,7 +145,7 @@ export class UsersService {
 
   async updateCodeActive(email: string): Promise<IResponse<null>>{
     const codeActive = this.createStringNumber();
-    const user = await this.userRepository.findOne({
+    const user = await this.users.findFirst({
       where:{email},
       select:{
         id: true,
@@ -142,11 +154,16 @@ export class UsersService {
       }
     });
 
-    await this.getCodeActive(`${user.firstname} ${user.surname}`, codeActive, "confirmation");
+    await this.getCodeActive(email, `${user.firstname} ${user.surname}`, codeActive, "confirmation");
 
-    const updateCode = await this.userRepository.update(user.id,{
-      codeActive: codeActive,
-      expiredCode: dayjs().add(5, "minutes").toISOString()
+    const updateCode = await this.users.update({
+      data: {
+        codeActive: codeActive,
+        expiredCode: dayjs().add(5, "minutes").toISOString()
+      },
+      where: {
+        id: user.id,
+      }
     });
 
     if(updateCode){
@@ -163,7 +180,7 @@ export class UsersService {
   }
 
   async activeAccount(email: string, activeCode: string): Promise<IResponse<null>>{
-    const user = await this.userRepository.findOne({
+    const user = await this.users.findFirst({
       where:{email}
     })
 
@@ -175,9 +192,14 @@ export class UsersService {
     };
 
     if( user.codeActive === activeCode && dayjs().isBefore(dayjs(user.expiredCode))){
-      await this.userRepository.update(user.id, {
-        isActive: true
-      })
+      await this.users.update({
+        where: {
+          id: user.id 
+        },
+        data: {
+          isActive: true
+        }
+      });
 
       return {
         statusCode: 200,
@@ -195,13 +217,13 @@ export class UsersService {
     return Math.floor(100000 + Math.random() * 900000)+"";
   }
 
-  async getCodeActive(name: string, code: string, template: string): Promise<void>{
-    await this.mailService.sendActiveCodeToGmail(name, code, template);
+  async getCodeActive(email: string, name: string, code: string, template: string): Promise<void>{
+    await this.mailService.sendActiveCodeToGmail(email, name, code, template);
   }
 
   async getCodeChangePassword(email: string): Promise<IResponse<null>>{
     const codeActive = this.createStringNumber();
-    const user = await this.userRepository.findOne({
+    const user = await this.users.findFirst({
       where:{email}
     });
 
@@ -212,12 +234,17 @@ export class UsersService {
       }
     }
 
-    await this.mailService.sendActiveCodeToGmail(`${user.firstname} ${user.surname}`, codeActive, "changepassword");
+    await this.mailService.sendActiveCodeToGmail(email ,`${user.firstname} ${user.surname}`, codeActive, "changepassword");
 
-    const updateCode = await this.userRepository.update(user.id,{
-      codeChangePassword: codeActive,
-      expiredCodeChangePassword: dayjs().add(5, "minutes").toISOString()
-    });
+    const updateCode = await this.users.update({
+      where: {
+        id: user.id
+      },
+      data: {
+        codeChangePassword: codeActive,
+        expiredCodeChangePassword: dayjs().add(5, "minutes").toISOString()
+      }
+    })
 
     if(updateCode){
       return {
@@ -233,9 +260,9 @@ export class UsersService {
   }
 
   async checkCodeChangePassword(email: string, code: string): Promise<IResponse<null>>{
-    const user = await this.userRepository.findOne({
+    const user = await this.users.findFirst({
       where:{email}
-    })
+    });
 
     if(!user){
       return {
@@ -245,8 +272,13 @@ export class UsersService {
     };
 
     if(user.codeChangePassword === code){
-      await this.userRepository.update(user.id, {
-        expiredChangePassword: dayjs().add(5, "minutes").toISOString()
+      await this.users.update({
+        where: {
+          id: user.id
+        },
+        data: {
+          expiredChangePassword: dayjs().add(5, "minutes").toISOString()
+        }
       })
 
       return {
@@ -262,7 +294,7 @@ export class UsersService {
   }
 
   async changePassword(email: string, password: string){
-    const user = await this.userRepository.findOne({
+    const user = await this.users.findFirst({
       where:{email}
     });
 
@@ -280,8 +312,13 @@ export class UsersService {
 
     const hassPassword = await argon.hash(password);
 
-    const updatePassword = await this.userRepository.update(user.id,{
+    const updatePassword = await this.users.update({
+      where: {
+        id: user.id
+      },
+      data: {
         hasspassword: hassPassword
+      }
     });
 
     if(updatePassword){

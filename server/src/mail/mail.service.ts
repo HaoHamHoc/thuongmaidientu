@@ -5,9 +5,9 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
   constructor(private readonly mailerService: MailerService){}
 
-  async sendActiveCodeToGmail(name: string, code: string, template: string) {
+  async sendActiveCodeToGmail(email: string, name: string, code: string, template: string) {
     await this.mailerService.sendMail({
-      to: "testcungcat@gmail.com",
+      to: email,
       from: '"Support Team" <Kitten>',
       subject: 'Welcome to Nice App! Confirm your Email',
       template: `./${template}`,
