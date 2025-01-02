@@ -1,35 +1,39 @@
+
 import React, { useContext } from 'react';
 import { KeyOutlined, LoadingOutlined, SmileOutlined, SolutionOutlined, UserOutlined } from '@ant-design/icons';
 import { Steps } from 'antd';
 import { CurrentChangePasswordContext } from '@/context/auth/currentChangePasswordSteps';
+import { useMediaQuery } from 'react-responsive';
 
-const StepsChangePassword: React.FC = () => {
+const StepsChangePassword: React.FC<{isMobile: boolean}> = ({isMobile}: {isMobile: boolean}) => {
   const { current } = useContext(CurrentChangePasswordContext);
+  const isMiniMobile = useMediaQuery({ minWidth: "532px" });
 
   return (
       <Steps
         style={{
-            height: "200px",
-            width: "30%",
+            height: isMobile ? "50px":"200px",
+            width: isMobile ? "100%":"30%",
         }}
         size='small'
         current={current}
-        direction="vertical"
+        direction={isMobile ? "horizontal":"vertical"}
+        responsive={false}
         items={[
           {
-            title: 'Email',
+            title: isMiniMobile ? 'Email':"",
             icon: <UserOutlined />,
           },
           {
-            title: 'Verification',
+            title: isMiniMobile ? 'Verification':"",
             icon: <SolutionOutlined />,
           },
           {
-            title: 'Change password',
+            title: isMiniMobile ? 'Change':"",
             icon: <KeyOutlined />,
           },
           {
-            title: 'Done',
+            title: isMiniMobile ? 'Done':"",
             icon: <SmileOutlined />,
           },
         ]}
