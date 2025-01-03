@@ -100,8 +100,7 @@ const Login: React.FC = () => {
                 <Form.Item
                     name="email"
                     rules={[
-                        { required: true, message: 'Please input your Username!' },
-                        { min: 8, message: 'Password must be longer than or equal to 8 characters'}
+                        { required: true, message: 'Please input your Username!' }
                     ]}
                 >
                     <Input prefix={<UserOutlined />} placeholder="Username" />
@@ -110,8 +109,7 @@ const Login: React.FC = () => {
                     name="password"
                     rules={
                         [
-                            { required: true, message: 'Please input your Password!' },
-                            { min: 8, message: 'Password must be longer than or equal to 8 characters'}
+                            { required: true, message: 'Please input your Password!' }
                         ]
                     }
                 >
